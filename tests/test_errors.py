@@ -10,7 +10,9 @@ BOT_BLOCK = "Sign in to confirm you're not a bot"
 
 class FakeYDL:
     def __init__(self, opts):
-        pass
+        # base_ydl_opts() probes a real YoutubeDL for its default headers,
+        # so the fake needs a params dict too
+        self.params = {"http_headers": {"User-Agent": "Mozilla/5.0 ..."}}
     def __enter__(self):
         return self
     def __exit__(self, *a):

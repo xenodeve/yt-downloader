@@ -109,7 +109,13 @@ def base_ydl_opts():
     # TikTok's WAF answers plain "en" requests with a hard wall (no challenge
     # to solve); a local Accept-Language gets the Slardar JS challenge that
     # yt-dlp solves with its native Python implementation — no cookies needed.
-    opts["http_headers"] = {"Accept-Language": "th,en"}
+    # The http_headers option REPLACES yt-dlp's default headers, so start from
+    # a real YoutubeDL's defaults and override only Accept-Language — a bare
+    # header dict loses the User-Agent. (yt_dlp.utils.std_headers is deprecated.)
+    with yt_dlp.YoutubeDL({"quiet": True}) as probe:
+        headers = dict(probe.params["http_headers"])
+    headers["Accept-Language"] = "th,en"
+    opts["http_headers"] = headers
     # YouTube blocks anonymous requests from some IPs ("Sign in to confirm
     # you're not a bot"). Pass cookies: a cookies.txt exported from the
     # browser, placed next to app.py; or YTDLP_BROWSER=chrome/firefox/...
