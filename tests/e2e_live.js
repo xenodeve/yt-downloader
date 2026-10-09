@@ -34,16 +34,19 @@ const { chromium } = require("playwright");
       ? "blocked-by-gate" : (err ? "extraction-error: " + err.slice(0, 60) : "extracted");
   }
 
-  // 3. full YouTube flow: real info, real download (mp3 128k), real progress
-  await pg.fill("#url", "https://www.youtube.com/watch?v=dQw4w9WgXcQ");
+  // 3. full flow on the given URL: real info, real download, real progress
+  const target = process.argv[3] || "https://www.youtube.com/watch?v=dQw4w9WgXcQ";
+  const type = process.argv[4] || "mp3";
+  await pg.fill("#url", target);
   await pg.click("#checkBtn");
-  const gotInfo = await pg.waitForSelector("#infoBody:not(.hidden)", { timeout: 25000 })
+  const gotInfo = await pg.waitForSelector("#infoBody:not(.hidden)", { timeout: 40000 })
     .then(() => true).catch(() => false);
   const title = gotInfo ? (await pg.textContent("#vTitle")).trim() : "";
+  const uiErr = (await pg.textContent("#urlErr")).trim().slice(0, 80);
   let flow = null;
   if (gotInfo) {
-    await pg.click('[data-type="mp3"]');
-    await pg.selectOption("#bitrate", "128");
+    await pg.click(`[data-type="${type}"]`);
+    if (type === "mp3") await pg.selectOption("#bitrate", "128");
     await pg.click("#dlBtn");
     const done = await pg.waitForSelector("#progDone:not(.hidden)", { timeout: 120000 })
       .then(() => true).catch(() => false);
@@ -64,7 +67,7 @@ const { chromium } = require("playwright");
   await pg.click("#langBtn");
 
   console.log("E2E-LIVE:", {
-    gate, platforms, gotInfo, title, flow,
+    target, type, gate, gotInfo, title, uiErr, flow,
     thLang, thSave, pageErrors: errs.length,
   });
   await b.close();

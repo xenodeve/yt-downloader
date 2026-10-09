@@ -27,7 +27,7 @@ app = Flask(__name__)
 SUPPORTED_RE = re.compile(
     r"^https?://(?:www\.|m\.)?(?:"
     r"youtube\.com/(?:watch\?|watch/|shorts/|live/|clip/)|youtu\.be/"
-    r"|facebook\.com/(?:watch|reel|reels|profile_video)|fb\.watch/|fb\.com/"
+    r"|facebook\.com/(?:watch|reel|reels|profile_video|[^/?#]+/videos/|video\.php)|fb\.watch/|fb\.com/"
     r"|instagram\.com/(?:p|reel|tv)/|instagr\.am/"
     r"|tiktok\.com/|vm\.tiktok\.com/|m\.tiktok\.com/"
     r")",

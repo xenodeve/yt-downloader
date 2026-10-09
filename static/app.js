@@ -99,7 +99,7 @@ function fmtDuration(s) {
 
 function show(el, on) { el.classList.toggle("hidden", !on); }
 
-const SUPPORTED_RE = /^(https?:\/\/)?(www\.|m\.)?(youtube\.com\/(watch\?|watch\/|shorts\/|live\/|clip\/)|youtu\.be\/|facebook\.com\/(watch|reel|reels|profile_video)|fb\.watch\/|fb\.com\/|instagram\.com\/(p|reel|tv)\/|instagr\.am\/|tiktok\.com\/|vm\.tiktok\.com\/|m\.tiktok\.com\/)/i;
+const SUPPORTED_RE = /^(https?:\/\/)?(www\.|m\.)?(youtube\.com\/(watch\?|watch\/|shorts\/|live\/|clip\/)|youtu\.be\/|facebook\.com\/(watch|reel|reels|profile_video|[^/?#]+\/videos\/|video\.php)|fb\.watch\/|fb\.com\/|instagram\.com\/(p|reel|tv)\/|instagr\.am\/|tiktok\.com\/|vm\.tiktok\.com\/|m\.tiktok\.com\/)/i;
 function isSupported(url) { return SUPPORTED_RE.test(url); }
 
 function setUrlError(pair) { // [en, th] or null

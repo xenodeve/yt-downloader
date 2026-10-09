@@ -12,6 +12,9 @@ def test_supported_platforms():
         "https://www.facebook.com/watch?v=10101010101",
         "https://m.facebook.com/reel/1234567890",
         "https://fb.watch/abc/",
+        # the forms yt-dlp's facebook extractor tests use for video links
+        "https://www.facebook.com/amogood/videos/1618742068337349/",
+        "https://www.facebook.com/video.php?v=637842556329505",
         "https://www.instagram.com/p/ABC123/",
         "https://instagr.am/p/ABC123/",
         "https://www.instagram.com/reel/ABC123/",
