@@ -104,6 +104,21 @@ def pick_final_file(files):
     return max(pool, key=lambda f: f.stat().st_size)
 
 
+def finalize(job_id, info):
+    """Pick (or build) the result file for a finished job."""
+    files = [f for f in DOWNLOAD_DIR.glob(f"{job_id}*") if f.is_file()]
+    if info.get("_type") == "playlist":
+        media = [f for f in files if f.suffix.lower() != ".zip"]
+        if not media:
+            raise RuntimeError("No downloaded file found")
+        zip_path = DOWNLOAD_DIR / f"{job_id}.zip"
+        with zipfile.ZipFile(zip_path, "w", zipfile.ZIP_DEFLATED) as zf:
+            for f in media:
+                zf.write(f, f.name)
+        return zip_path
+    return pick_final_file(files)
+
+
 # --------------------------------------------------------------------------- #
 # Home page
 # --------------------------------------------------------------------------- #
@@ -217,19 +232,7 @@ def api_download():
             with yt_dlp.YoutubeDL(opts) as ydl:
                 info = ydl.extract_info(url, download=True)
 
-            files = [f for f in DOWNLOAD_DIR.glob(f"{job_id}*") if f.is_file()]
-
-            if info.get("_type") == "playlist":
-                media = [f for f in files if f.suffix.lower() != ".zip"]
-                if not media:
-                    raise RuntimeError("No downloaded file found")
-                zip_path = DOWNLOAD_DIR / f"{job_id}.zip"
-                with zipfile.ZipFile(zip_path, "w", zipfile.ZIP_DEFLATED) as zf:
-                    for f in media:
-                        zf.write(f, f.name)
-                final = zip_path
-            else:
-                final = pick_final_file(files)
+            final = finalize(job_id, info)
 
             with JOBS_LOCK:
                 JOBS[job_id]["status"] = "done"
