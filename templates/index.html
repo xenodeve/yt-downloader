@@ -1,0 +1,120 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>YT Downloader</title>
+  <meta name="description" content="Download YouTube videos (MP4) and audio (MP3) to your own machine. Local, self-hosted, no account." />
+  <meta property="og:title" content="YT Downloader" />
+  <meta property="og:description" content="Download YouTube videos (MP4) and audio (MP3) to your own machine. Local, self-hosted, no account." />
+  <meta property="og:image" content="{{ url_for('static', filename='og.png') }}" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}" />
+</head>
+<body>
+  <a class="skip" href="#content">Skip to content</a>
+  <main class="wrap" id="content">
+    <div class="ledger">
+
+      <!-- sticky left index -->
+      <aside class="index" aria-label="Download steps">
+        <h1 class="title">YT<br>Downloader</h1>
+        <p class="kicker">Local &middot; Self-hosted</p>
+        <hr class="rule" />
+        <p data-row="1" class="now">01 &middot; Source URL</p>
+        <p data-row="2">02 &middot; Parsed</p>
+        <p data-row="3">03 &middot; Format</p>
+        <p data-row="4">04 &middot; Transfer</p>
+      </aside>
+
+      <div class="content">
+
+        <!-- 01 URL input -->
+        <section class="row">
+          <p class="row-head"><span>01 &middot; Source URL</span><span class="num" id="metaHint">paste &crarr;</span></p>
+          <div class="url-row">
+            <input id="url" type="text" class="field-input"
+                   placeholder="https://www.youtube.com/watch?v=&hellip;"
+                   aria-label="YouTube link" autocomplete="off" spellcheck="false" />
+            <button id="checkBtn" class="btn ghost">Check</button>
+          </div>
+          <p id="urlErr" class="err hidden" role="alert"></p>
+        </section>
+
+        <!-- 02 Video info -->
+        <section class="row hidden" id="infoCard" aria-live="polite">
+          <p class="row-head"><span>02 &middot; Parsed</span><span class="num" id="metaCount">&mdash;</span></p>
+
+          <div id="infoLoading" class="info-body loading">
+            <div class="skel skel-thumb"></div>
+            <div class="meta">
+              <div class="skel" style="height:18px;width:85%"></div>
+              <div class="skel" style="height:14px;width:55%;margin-top:12px"></div>
+              <div class="skel" style="height:14px;width:35%;margin-top:10px"></div>
+            </div>
+          </div>
+
+          <div id="infoBody" class="info-body hidden">
+            <img id="thumb" class="thumb" alt="video thumbnail" />
+            <div class="meta">
+              <h2 id="vTitle" class="v-title"></h2>
+              <p id="vUp" class="v-up"></p>
+              <p id="vDur" class="v-dur"></p>
+            </div>
+          </div>
+          <ul id="playlistList" class="playlist hidden"></ul>
+        </section>
+
+        <!-- 03 Format options -->
+        <section class="row hidden" id="optCard">
+          <p class="row-head"><span>03 &middot; Format</span><span class="num" id="metaType">MP4</span></p>
+          <div class="seg" id="typeSeg" role="tablist" aria-label="Type">
+            <button data-type="video" class="seg-btn active" role="tab" aria-selected="true">Video &middot; MP4</button>
+            <button data-type="mp3" class="seg-btn" role="tab" aria-selected="false">Audio &middot; MP3</button>
+          </div>
+
+          <div class="field-row">
+            <div class="field" id="qualityField">
+              <label for="quality">Quality</label>
+              <select id="quality"></select>
+            </div>
+            <div class="field hidden" id="bitrateField">
+              <label for="bitrate">Bitrate</label>
+              <select id="bitrate">
+                <option value="128">128 kbps</option>
+                <option value="192" selected>192 kbps</option>
+                <option value="256">256 kbps</option>
+                <option value="320">320 kbps</option>
+              </select>
+            </div>
+          </div>
+
+          <button id="dlBtn" class="btn primary big">&darr; Download</button>
+        </section>
+
+        <!-- 04 Status / progress -->
+        <section class="row hidden" id="progCard" aria-live="polite">
+          <p class="row-head"><span>04 &middot; Transfer</span><span class="num" id="metaStage">&mdash;</span></p>
+          <div class="prog-top">
+            <span id="progText">Downloading&hellip;</span>
+            <span id="progPct">0%</span>
+          </div>
+          <div class="bar" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" id="barWrap">
+            <div id="barFill" class="bar-fill"></div>
+          </div>
+          <p class="chip hidden" id="progChip"><b>&#9679;</b> <span id="chipText">yt-dlp</span></p>
+          <div id="progDone" class="prog-done hidden">
+            <a id="saveBtn" class="btn primary big" href="#">&#9678; Save file</a>
+          </div>
+          <p id="errMsg" class="err hidden" role="alert"></p>
+        </section>
+
+        <footer class="foot">For internal use &middot; Please respect content creators&rsquo; rights</footer>
+      </div>
+    </div>
+  </main>
+
+  <script src="{{ url_for('static', filename='app.js') }}"></script>
+</body>
+</html>

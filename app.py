@@ -1,0 +1,260 @@
+"""
+YT Downloader — local web app
+Download video (MP4) and audio (MP3) from YouTube through a web page.
+
+Run:  python app.py   →  open http://localhost:5000
+"""
+
+import os
+import shutil
+import threading
+import uuid
+import zipfile
+from pathlib import Path
+
+from flask import Flask, jsonify, render_template, request, send_file
+import yt_dlp
+
+BASE_DIR = Path(__file__).resolve().parent
+DOWNLOAD_DIR = BASE_DIR / "downloads"
+DOWNLOAD_DIR.mkdir(exist_ok=True)
+
+app = Flask(__name__)
+
+# job_id -> {status, percent, status_text, file_path, error}
+JOBS = {}
+JOBS_LOCK = threading.Lock()
+
+
+# --------------------------------------------------------------------------- #
+# ffmpeg: use ffmpeg on PATH first; fall back to the bundled imageio-ffmpeg
+# --------------------------------------------------------------------------- #
+def get_ffmpeg_location():
+    # 1. ffmpeg on PATH
+    exe = shutil.which("ffmpeg")
+    if exe:
+        return os.path.dirname(exe)
+    # 2. create bin/ffmpeg.exe from imageio-ffmpeg
+    #    (yt-dlp looks for a file named "ffmpeg" in the ffmpeg_location dir,
+    #     but imageio-ffmpeg ships it as ffmpeg-win-x86_64-v7.1.exe)
+    try:
+        import imageio_ffmpeg
+        src = imageio_ffmpeg.get_ffmpeg_exe()
+        bin_dir = BASE_DIR / "bin"
+        bin_dir.mkdir(exist_ok=True)
+        dst = bin_dir / "ffmpeg.exe"
+        if not dst.exists():
+            shutil.copy2(src, dst)
+        return str(bin_dir)
+    except Exception:
+        return None
+
+
+def base_ydl_opts():
+    opts = {
+        "quiet": True,
+        "no_warnings": True,
+        "noprogress": True,
+    }
+    ff = get_ffmpeg_location()
+    if ff:
+        opts["ffmpeg_location"] = ff
+    return opts
+
+
+def make_progress_hook(job_id):
+    def hook(d):
+        if d.get("status") == "downloading":
+            total = d.get("total_bytes") or d.get("total_bytes_estimate")
+            done = d.get("downloaded_bytes", 0)
+            if total:
+                pct = done / total * 100
+                with JOBS_LOCK:
+                    JOBS[job_id]["percent"] = pct
+                    JOBS[job_id]["status_text"] = f"Downloading {pct:.0f}%"
+        elif d.get("status") == "finished":
+            with JOBS_LOCK:
+                JOBS[job_id]["status_text"] = "Processing…"
+    return hook
+
+
+def pick_final_file(files):
+    """Pick the final output file (not an intermediate .fXXX part)."""
+    media = [f for f in files if f.suffix.lower() in (".mp4", ".mp3", ".m4a", ".webm", ".mkv")]
+    pool = media or files
+    if not pool:
+        return None
+    return max(pool, key=lambda f: f.stat().st_size)
+
+
+# --------------------------------------------------------------------------- #
+# Home page
+# --------------------------------------------------------------------------- #
+@app.route("/")
+def index():
+    return render_template("index.html")
+
+
+# --------------------------------------------------------------------------- #
+# Fetch video info (no download)
+# --------------------------------------------------------------------------- #
+@app.route("/api/info")
+def api_info():
+    url = (request.args.get("url") or "").strip()
+    if not url:
+        return jsonify({"error": "URL is empty"}), 400
+
+    opts = base_ydl_opts()
+    opts.update({
+        "skip_download": True,
+        "extract_flat": "in_playlist",  # fast for playlists
+    })
+    try:
+        with yt_dlp.YoutubeDL(opts) as ydl:
+            info = ydl.extract_info(url, download=False)
+    except Exception as e:
+        return jsonify({"error": f"Could not read info: {e}"}), 400
+
+    if info.get("_type") == "playlist":
+        entries = [e for e in (info.get("entries") or []) if e]
+        return jsonify({
+            "is_playlist": True,
+            "title": info.get("title"),
+            "count": len(entries),
+            "entries": [
+                {
+                    "title": e.get("title"),
+                    "duration": e.get("duration"),
+                    "url": e.get("url") or e.get("webpage_url"),
+                }
+                for e in entries
+            ],
+        })
+
+    # single video: collect available qualities
+    qualities = set()
+    for f in info.get("formats", []):
+        if f.get("vcodec") != "none" and f.get("height"):
+            qualities.add(f["height"])
+    return jsonify({
+        "is_playlist": False,
+        "title": info.get("title"),
+        "duration": info.get("duration"),
+        "thumbnail": info.get("thumbnail"),
+        "uploader": info.get("uploader"),
+        "qualities": sorted(qualities, reverse=True),
+    })
+
+
+# --------------------------------------------------------------------------- #
+# Start download (background job)
+# --------------------------------------------------------------------------- #
+@app.route("/api/download", methods=["POST"])
+def api_download():
+    data = request.get_json(force=True, silent=True) or {}
+    url = (data.get("url") or "").strip()
+    kind = data.get("type", "video")      # video | mp3
+    quality = data.get("quality")         # int (height) for video
+    bitrate = data.get("bitrate")         # int (kbps) for mp3
+
+    if not url:
+        return jsonify({"error": "URL is empty"}), 400
+
+    job_id = uuid.uuid4().hex
+    with JOBS_LOCK:
+        JOBS[job_id] = {
+            "status": "running",
+            "percent": 0,
+            "status_text": "Starting…",
+            "file_path": None,
+            "error": None,
+        }
+
+    def worker():
+        try:
+            opts = base_ydl_opts()
+            opts["outtmpl"] = str(DOWNLOAD_DIR / f"{job_id}%(title)s [%(id)s].%(ext)s")
+            opts["progress_hooks"] = [make_progress_hook(job_id)]
+
+            if kind == "mp3":
+                opts["format"] = "bestaudio/best"
+                opts["postprocessors"] = [{
+                    "key": "FFmpegExtractAudio",
+                    "preferredcodec": "mp3",
+                    "preferredquality": str(bitrate or 192),
+                }]
+            else:
+                if quality:
+                    opts["format"] = (
+                        f"bestvideo[height<={quality}]+bestaudio/"
+                        f"best[height<={quality}]/best"
+                    )
+                else:
+                    opts["format"] = "bestvideo+bestaudio/best"
+                opts["merge_output_format"] = "mp4"
+
+            with yt_dlp.YoutubeDL(opts) as ydl:
+                info = ydl.extract_info(url, download=True)
+
+            files = [f for f in DOWNLOAD_DIR.glob(f"{job_id}*") if f.is_file()]
+
+            if info.get("_type") == "playlist":
+                media = [f for f in files if f.suffix.lower() != ".zip"]
+                if not media:
+                    raise RuntimeError("No downloaded file found")
+                zip_path = DOWNLOAD_DIR / f"{job_id}.zip"
+                with zipfile.ZipFile(zip_path, "w", zipfile.ZIP_DEFLATED) as zf:
+                    for f in media:
+                        zf.write(f, f.name)
+                final = zip_path
+            else:
+                final = pick_final_file(files)
+
+            with JOBS_LOCK:
+                JOBS[job_id]["status"] = "done"
+                JOBS[job_id]["percent"] = 100
+                JOBS[job_id]["status_text"] = "Finished"
+                JOBS[job_id]["file_path"] = str(final) if final else None
+        except Exception as e:
+            with JOBS_LOCK:
+                JOBS[job_id]["status"] = "error"
+                JOBS[job_id]["status_text"] = "Error"
+                JOBS[job_id]["error"] = str(e)
+
+    threading.Thread(target=worker, daemon=True).start()
+    return jsonify({"job_id": job_id})
+
+
+# --------------------------------------------------------------------------- #
+# Check job status
+# --------------------------------------------------------------------------- #
+@app.route("/api/progress/<job_id>")
+def api_progress(job_id):
+    with JOBS_LOCK:
+        job = JOBS.get(job_id)
+        if not job:
+            return jsonify({"error": "Job not found"}), 404
+        return jsonify({
+            "status": job["status"],
+            "percent": job["percent"],
+            "status_text": job["status_text"],
+            "error": job["error"],
+            "download_url": f"/download/{job_id}" if job["status"] == "done" else None,
+        })
+
+
+# --------------------------------------------------------------------------- #
+# Send the result file
+# --------------------------------------------------------------------------- #
+@app.route("/download/<job_id>")
+def download_file(job_id):
+    with JOBS_LOCK:
+        job = JOBS.get(job_id)
+        if not job or job["status"] != "done" or not job["file_path"]:
+            return jsonify({"error": "File not ready"}), 404
+        path = Path(job["file_path"])
+    return send_file(path, as_attachment=True, download_name=path.name)
+
+
+if __name__ == "__main__":
+    app.run(debug=True, host="127.0.0.1", port=5000)

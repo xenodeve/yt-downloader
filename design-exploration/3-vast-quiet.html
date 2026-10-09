@@ -1,0 +1,163 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>YT Downloader — Vast Quiet</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;600;700&display=swap" rel="stylesheet" />
+<style>
+/* Vast Quiet — deep dark canvas, luxury white space, one red accent at 10%,
+   elevation via lighter surfaces, not shadows */
+:root {
+  --bg:#0b0b0c; --surface:#141416; --surface-2:#1c1c1f; --line:#26262a;
+  --text:#f4f4f2; --text-2:#b9b9bd; --muted:#84848b;
+  --red:#ff2d2d; --red-soft:rgba(255,45,45,.12);
+  --disp:"Sora",sans-serif;
+}
+* { box-sizing:border-box; }
+body { margin:0; background:var(--bg); color:var(--text); font:16px/1.5 var(--disp);
+  -webkit-font-smoothing:antialiased; }
+:focus-visible { outline:2px solid var(--red); outline-offset:3px; border-radius:2px; }
+.wrap { max-width:680px; margin:0 auto; padding:88px 32px 96px; }
+
+.hero { margin-bottom:64px; }
+.hero .kicker { margin:0; font-size:13px; font-weight:600; letter-spacing:.14em;
+  text-transform:uppercase; color:var(--red); }
+.hero h1 { margin:24px 0 0; font-size:3.815rem; font-weight:700; line-height:1.12;
+  letter-spacing:-0.025em; max-width:14ch; }
+.hero .sub { margin:24px 0 0; font-size:17px; font-weight:300; color:var(--text-2); max-width:36ch; }
+
+.card { background:var(--surface); margin-bottom:32px; padding:32px;
+  border-radius:20px; border:1px solid var(--line); }
+.hidden { display:none !important; }
+
+.url-row { display:flex; gap:12px; }
+.field-input { flex:1; min-width:0; background:var(--surface-2); border:1px solid var(--line);
+  color:var(--text); border-radius:12px; padding:16px; font:15px/1.4 var(--disp);
+  transition:border-color .2s, box-shadow .2s; }
+.field-input::placeholder { color:var(--muted); }
+.field-input:focus { outline:none; border-color:var(--red);
+  box-shadow:0 0 0 4px var(--red-soft); }
+.btn { appearance:none; border:none; cursor:pointer; font:600 15px/1 var(--disp);
+  border-radius:12px; padding:16px 24px; display:inline-flex; align-items:center;
+  justify-content:center; gap:8px; white-space:nowrap; text-decoration:none;
+  transition:transform .08s, filter .2s, background .2s; }
+.btn:active { transform:scale(.98); }
+.btn:disabled { opacity:.5; cursor:not-allowed; }
+.btn.ghost { background:var(--surface-2); color:var(--text); border:1px solid var(--line); }
+.btn.ghost:hover { background:#232327; }
+.btn.primary { background:var(--red); color:#fff; width:100%; }
+.btn.primary:hover { filter:brightness(1.08); }
+.btn.big { padding:18px 24px; font-size:16px; }
+
+.info-body { display:flex; gap:24px; }
+.thumb { width:220px; max-width:45%; aspect-ratio:16/9; flex-shrink:0; border-radius:12px;
+  background:linear-gradient(135deg,#222226,#17171b 60%,#2d2330); }
+.meta { min-width:0; flex:1; }
+.v-title { margin:0 0 12px; font-size:1.5625rem; font-weight:600; line-height:1.15;
+  letter-spacing:-0.02em; }
+.v-up,.v-dur { margin:0; font-size:14px; color:var(--muted); font-weight:300; }
+.v-dur { margin-top:6px; }
+.playlist { list-style:none; margin:24px 0 0; padding:24px 0 0; border-top:1px solid var(--line); }
+.playlist li { display:flex; justify-content:space-between; gap:16px; font-size:14px;
+  font-weight:300; padding:8px 0; }
+.playlist .pl-dur { color:var(--muted); font-variant-numeric:tabular-nums; }
+
+.seg { display:grid; grid-template-columns:1fr 1fr; gap:6px; background:var(--surface-2);
+  padding:6px; border-radius:14px; margin-bottom:32px; }
+.seg-btn { border:none; background:transparent; color:var(--muted); font:600 15px/1 var(--disp);
+  padding:14px; border-radius:10px; cursor:pointer; transition:color .2s, background .2s; }
+.seg-btn:hover { color:var(--text); }
+.seg-btn.active { background:var(--red-soft); color:var(--red); }
+.field-row { display:flex; gap:24px; margin-bottom:32px; }
+.field { flex:1; min-width:0; }
+.field label { display:block; font-size:12px; font-weight:600; letter-spacing:.1em;
+  text-transform:uppercase; color:var(--muted); margin-bottom:10px; }
+.field select { width:100%; background:var(--surface-2); color:var(--text); border:1px solid var(--line);
+  border-radius:12px; padding:15px; font:15px/1.4 var(--disp); cursor:pointer;
+  transition:border-color .2s, box-shadow .2s; }
+.field select:focus { outline:none; border-color:var(--red); box-shadow:0 0 0 4px var(--red-soft); }
+
+.prog-top { display:flex; justify-content:space-between; font-size:14px; font-weight:300;
+  margin-bottom:16px; }
+.prog-top b { font-weight:600; }
+#progPct { color:var(--red); font-variant-numeric:tabular-nums; }
+.bar { height:8px; background:var(--surface-2); border-radius:999px; }
+.bar-fill { height:100%; width:64%; border-radius:999px; background:var(--red);
+  transition:width .3s; }
+.prog-done { margin-top:32px; }
+.foot { text-align:center; font-size:12px; font-weight:300; color:var(--muted);
+  margin-top:48px; }
+
+@media (max-width:390px) {
+  .wrap { padding:40px 16px 56px; }
+  .hero h1 { font-size:2.441rem; }
+  .info-body { flex-direction:column; gap:16px; }
+  .thumb { width:100%; max-width:100%; }
+  .url-row,.field-row { flex-direction:column; gap:16px; }
+  .btn.ghost { width:100%; }
+}
+@media (prefers-reduced-motion:reduce) {
+  *,*::before,*::after { animation-duration:.001ms !important; transition-duration:.001ms !important; }
+}
+</style>
+</head>
+<body>
+<main class="wrap">
+  <header class="hero">
+    <p class="kicker">Self-hosted</p>
+    <h1>Take the video home.</h1>
+    <p class="sub">Paste a YouTube link. Get the file — MP4 at your chosen quality, MP3 at your chosen bitrate — on your own machine.</p>
+  </header>
+
+  <section class="card">
+    <div class="url-row">
+      <input id="url" type="text" class="field-input" value="https://www.youtube.com/watch?v=dQw4w9WgXcQ" />
+      <button class="btn ghost">Check</button>
+    </div>
+  </section>
+
+  <section class="card">
+    <div class="info-body">
+      <div class="thumb"></div>
+      <div class="meta">
+        <h2 class="v-title">Neon Drive &mdash; Midnight City [Official Video]</h2>
+        <p class="v-up">Chasing Static &middot; 1.2M subscribers</p>
+        <p class="v-dur">3:42 &middot; 1080p available</p>
+      </div>
+    </div>
+    <ul class="playlist">
+      <li><span>Neon Drive &mdash; Midnight City</span><span class="pl-dur">3:42</span></li>
+      <li><span>Neon Drive &mdash; Static Bloom</span><span class="pl-dur">4:05</span></li>
+    </ul>
+  </section>
+
+  <section class="card">
+    <div class="seg">
+      <button class="seg-btn active">Video &middot; MP4</button>
+      <button class="seg-btn">Audio &middot; MP3</button>
+    </div>
+    <div class="field-row">
+      <div class="field">
+        <label>Quality</label>
+        <select><option>1080p (Full HD+)</option><option>720p</option><option>360p</option></select>
+      </div>
+      <div class="field">
+        <label>Bitrate</label>
+        <select><option>192 kbps</option><option>320 kbps</option></select>
+      </div>
+    </div>
+    <button class="btn primary big">Download</button>
+  </section>
+
+  <section class="card">
+    <div class="prog-top"><span><b>Downloading&hellip;</b></span><span id="progPct">64%</span></div>
+    <div class="bar"><div class="bar-fill"></div></div>
+    <div class="prog-done"><button class="btn primary big">Save file</button></div>
+  </section>
+
+  <footer class="foot">For internal use &middot; Respect the creators&rsquo; rights</footer>
+</main>
+</body>
+</html>

@@ -1,0 +1,32 @@
+{
+  "mcpServers": {
+    "pal": {
+      "type": "stdio",
+      "command": "openclink",
+      "args": [],
+      "env": {
+        "CUSTOM_API_URL": "https://gateway.9arm.co/v1",
+        "CUSTOM_API_KEY": "sk-UcCnIrDJB2LIsdOSbI6V6g",
+        "CUSTOM_MODEL_NAME": "qwen3.8-27b-fp8",
+        "DEFAULT_MODEL": "qwen3.8-27b-fp8",
+        "CUSTOM_MODELS_CONFIG_PATH": "C:\\Users\\xenod\\.claude\\pal-custom-models.json"
+      }
+    },
+    "huggingface": {
+      "type": "http",
+      "url": "https://huggingface.co/mcp?login"
+    },
+    "serena": {
+      "type": "stdio",
+      "command": "serena",
+      "args": [
+        "start-mcp-server",
+        "--context",
+        "ide-assistant",
+        "--project",
+        "D:/Github/Agentic Framework"
+      ],
+      "env": {}
+    }
+  }
+}

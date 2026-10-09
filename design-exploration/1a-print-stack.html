@@ -1,0 +1,152 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>YT Downloader — Print Tech · A: Vertical Stack</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet" />
+<style>
+/* Print Tech — variant A: Minimal Vertical Stack (single center column, stamp-shadow cards) */
+:root {
+  --paper:#faf6ef; --paper-2:#f3ede2; --ink:#171512; --ink-2:#4a453d;
+  --stamp:#e8341c; --line:#d9d1c2;
+  --disp:"Space Grotesk",sans-serif; --mono:"IBM Plex Mono",monospace;
+}
+* { box-sizing:border-box; }
+body { margin:0; background:var(--paper); color:var(--ink); font:16px/1.5 var(--disp); }
+:focus-visible { outline:2px solid var(--stamp); outline-offset:2px; }
+.wrap { max-width:640px; margin:0 auto; padding:64px 24px 72px; }
+
+.hero { border-bottom:2px solid var(--ink); padding-bottom:24px; margin-bottom:40px; }
+.kicker { font:500 12px/1 var(--mono); letter-spacing:.12em; text-transform:uppercase; color:var(--stamp); margin:0; }
+.hero h1 { margin:12px 0 0; font-size:3.815rem; line-height:1.12; letter-spacing:-0.025em;
+  font-weight:700; text-transform:uppercase; }
+.hero .sub { margin:8px 0 0; font:500 12px/1.5 var(--mono); color:var(--ink-2); }
+
+.card { background:var(--paper); border:1px solid var(--ink); margin-bottom:24px; padding:24px;
+  box-shadow:6px 6px 0 var(--ink); }
+.card-title { font:500 11px/1 var(--mono); letter-spacing:.14em; text-transform:uppercase;
+  color:var(--ink-2); margin:0 0 16px; }
+.hidden { display:none !important; }
+
+.url-row { display:flex; gap:8px; }
+.field-input { flex:1; min-width:0; font:15px/1.4 var(--mono); padding:14px;
+  background:#fff; border:1px solid var(--ink); color:var(--ink); }
+.btn { appearance:none; cursor:pointer; font:700 14px/1 var(--disp); border-radius:0;
+  padding:14px 24px; display:inline-flex; gap:8px; align-items:center; justify-content:center;
+  border:1px solid var(--ink); text-decoration:none; white-space:nowrap;
+  transition:transform .08s, background .15s, color .15s; }
+.btn:active { transform:translate(2px,2px); box-shadow:-2px -2px 0 var(--ink); }
+.btn:disabled { opacity:.5; cursor:not-allowed; }
+.btn.ghost { background:var(--paper-2); color:var(--ink); }
+.btn.ghost:hover { background:var(--ink); color:var(--paper); }
+.btn.primary { background:var(--stamp); color:#fff; border-color:var(--stamp); width:100%;
+  text-transform:uppercase; letter-spacing:.04em; }
+.btn.primary:hover { background:#c92a14; }
+.btn.big { padding:16px 24px; font-size:16px; }
+
+.info-body { display:flex; gap:16px; }
+.thumb { width:200px; max-width:45%; aspect-ratio:16/9; flex-shrink:0; border:1px solid var(--ink);
+  background:repeating-linear-gradient(45deg,#3a3630 0 6px,#292621 6px 12px); }
+.meta { min-width:0; flex:1; }
+.v-title { margin:0 0 8px; font-size:1.5625rem; line-height:1.12; letter-spacing:-0.025em; font-weight:700; }
+.v-up,.v-dur { margin:0; font:500 12px/1.6 var(--mono); color:var(--ink-2); }
+.playlist { list-style:none; margin:16px 0 0; padding:16px 0 0; border-top:1px dashed var(--line); }
+.playlist li { display:flex; justify-content:space-between; gap:12px; font:14px/1.4 var(--mono); padding:6px 0; }
+.playlist .pl-dur { color:var(--ink-2); }
+
+.seg { display:grid; grid-template-columns:1fr 1fr; border:1px solid var(--ink); margin-bottom:24px; }
+.seg-btn { border:none; background:var(--paper-2); color:var(--ink); font:700 14px/1 var(--disp);
+  padding:14px; cursor:pointer; text-transform:uppercase; letter-spacing:.06em; }
+.seg-btn.active { background:var(--ink); color:var(--paper); }
+.field-row { display:flex; gap:16px; margin-bottom:24px; }
+.field { flex:1; min-width:0; }
+.field label { display:block; font:500 11px/1 var(--mono); letter-spacing:.14em;
+  text-transform:uppercase; color:var(--ink-2); margin-bottom:8px; }
+.field select { width:100%; padding:14px; font:15px/1.4 var(--mono); background:#fff;
+  border:1px solid var(--ink); color:var(--ink); border-radius:0; }
+
+.prog-top { display:flex; justify-content:space-between; font:500 12px/1 var(--mono);
+  letter-spacing:.1em; text-transform:uppercase; margin-bottom:8px; }
+.bar { height:12px; border:1px solid var(--ink); background:#fff; }
+.bar-fill { height:100%; width:64%; background:repeating-linear-gradient(-45deg,var(--stamp) 0 4px,#f7917e 4px 8px); }
+.prog-done { margin-top:24px; }
+.foot { font:500 11px/1.6 var(--mono); color:var(--ink-2); text-align:center;
+  border-top:1px solid var(--line); padding-top:16px; }
+
+@media (max-width:390px) {
+  .wrap { padding:32px 16px 48px; }
+  .hero h1 { font-size:2.441rem; }
+  .info-body { flex-direction:column; }
+  .thumb { width:100%; max-width:100%; }
+  .url-row,.field-row { flex-direction:column; }
+  .btn.ghost { width:100%; }
+}
+@media (prefers-reduced-motion:reduce) {
+  *,*::before,*::after { animation-duration:.001ms !important; transition-duration:.001ms !important; }
+}
+</style>
+</head>
+<body>
+<main class="wrap">
+  <header class="hero">
+    <p class="kicker">Local &middot; Self-hosted &middot; No account</p>
+    <h1>YT Downloader</h1>
+    <p class="sub">Paste a YouTube link &rarr; video (MP4) / audio (MP3) on your machine</p>
+  </header>
+
+  <section class="card">
+    <p class="card-title">01 &middot; Source URL</p>
+    <div class="url-row">
+      <input id="url" type="text" class="field-input" value="https://www.youtube.com/watch?v=dQw4w9WgXcQ" />
+      <button class="btn ghost">Check</button>
+    </div>
+  </section>
+
+  <section class="card">
+    <p class="card-title">02 &middot; Parsed</p>
+    <div class="info-body">
+      <div class="thumb"></div>
+      <div class="meta">
+        <h2 class="v-title">Neon Drive &mdash; Midnight City [Official Video]</h2>
+        <p class="v-up">Chasing Static &middot; 1.2M subscribers</p>
+        <p class="v-dur">3:42 &middot; 1080p available</p>
+      </div>
+    </div>
+    <ul class="playlist">
+      <li><span>01. Neon Drive &mdash; Midnight City</span><span class="pl-dur">3:42</span></li>
+      <li><span>02. Neon Drive &mdash; Static Bloom</span><span class="pl-dur">4:05</span></li>
+    </ul>
+  </section>
+
+  <section class="card">
+    <p class="card-title">03 &middot; Format</p>
+    <div class="seg">
+      <button class="seg-btn active">Video &middot; MP4</button>
+      <button class="seg-btn">Audio &middot; MP3</button>
+    </div>
+    <div class="field-row">
+      <div class="field">
+        <label>Quality</label>
+        <select><option>1080p (Full HD+)</option><option>720p</option><option>360p</option></select>
+      </div>
+      <div class="field">
+        <label>Bitrate</label>
+        <select><option>192 kbps</option><option>320 kbps</option></select>
+      </div>
+    </div>
+    <button class="btn primary big">&darr; Download</button>
+  </section>
+
+  <section class="card">
+    <p class="card-title">04 &middot; Transfer</p>
+    <div class="prog-top"><span>Downloading</span><span>64%</span></div>
+    <div class="bar"><div class="bar-fill"></div></div>
+    <div class="prog-done"><button class="btn primary big">&#9678; Save file</button></div>
+  </section>
+
+  <footer class="foot">For internal use &middot; Respect the creators&rsquo; rights</footer>
+</main>
+</body>
+</html>
