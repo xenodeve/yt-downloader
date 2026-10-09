@@ -106,6 +106,10 @@ def base_ydl_opts():
     ff = get_ffmpeg_location()
     if ff:
         opts["ffmpeg_location"] = ff
+    # TikTok's WAF answers plain "en" requests with a hard wall (no challenge
+    # to solve); a local Accept-Language gets the Slardar JS challenge that
+    # yt-dlp solves with its native Python implementation — no cookies needed.
+    opts["http_headers"] = {"Accept-Language": "th,en"}
     # YouTube blocks anonymous requests from some IPs ("Sign in to confirm
     # you're not a bot"). Pass cookies: a cookies.txt exported from the
     # browser, placed next to app.py; or YTDLP_BROWSER=chrome/firefox/...
