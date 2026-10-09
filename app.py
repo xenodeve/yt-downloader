@@ -40,6 +40,17 @@ def is_supported_url(url):
 
 SUPPORT_MSG = "Not a supported link — YouTube, Facebook, TikTok, Instagram"
 
+# a raw yt-dlp failure like "Sign in to confirm you're not a bot" is true
+# but not useful — append the one action that fixes it (cookies.txt)
+LOGIN_HINT_RE = re.compile(r"sign in to confirm|login required", re.IGNORECASE)
+COOKIES_HINT = " — export cookies.txt from your logged-in browser and place it next to app.py"
+
+
+def friendly_error(msg):
+    if LOGIN_HINT_RE.search(msg):
+        return msg + COOKIES_HINT
+    return msg
+
 # job_id -> {status, percent, status_text, file_path, error}
 JOBS = {}
 JOBS_LOCK = threading.Lock()
@@ -183,7 +194,7 @@ def api_info():
         with yt_dlp.YoutubeDL(opts) as ydl:
             info = ydl.extract_info(url, download=False)
     except Exception as e:
-        return jsonify({"error": f"Could not read info: {e}"}), 400
+        return jsonify({"error": f"Could not read info: {friendly_error(str(e))}"}), 400
 
     if info.get("_type") == "playlist":
         entries = [e for e in (info.get("entries") or []) if e]
@@ -280,7 +291,7 @@ def api_download():
             with JOBS_LOCK:
                 JOBS[job_id]["status"] = "error"
                 JOBS[job_id]["status_text"] = "Error"
-                JOBS[job_id]["error"] = str(e)
+                JOBS[job_id]["error"] = friendly_error(str(e))
 
     threading.Thread(target=worker, daemon=True).start()
     return jsonify({"job_id": job_id})
