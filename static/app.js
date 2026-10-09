@@ -33,13 +33,47 @@ const els = {
   progDone: $("progDone"),
   saveBtn: $("saveBtn"),
   errMsg: $("errMsg"),
+  langBtn: $("langBtn"),
 };
 
 const indexRows = [...document.querySelectorAll(".index p[data-row]")];
-const CHECK_LABEL = els.checkBtn.textContent; // preserve original label
 const ORB_HTML = '<span class="orb" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i></span>';
 let currentType = "video";
 let pollTimer = null;
+
+// EN/TH toggle — langBtn's label is the language you switch TO
+const I18N = {
+  en: {
+    skip: "Skip to content",
+    kicker: "Local · Self-hosted",
+    row1: "01 · Source URL", row2: "02 · Parsed",
+    row3: "03 · Format", row4: "04 · Transfer",
+    metaHint: "paste ⏎", check: "Check",
+    qualityLabel: "Quality", bitrateLabel: "Bitrate",
+    segVideo: "Video · MP4", segAudio: "Audio · MP3",
+    dl: "↓ Download", progText: "Downloading…",
+    save: "◈ Save file",
+    foot: "For internal use · Please respect content creators’ rights",
+    langBtn: "ไทย",
+  },
+  th: {
+    skip: "ข้ามไปเนื้อหา",
+    kicker: "local · ทำงานในเครื่อง",
+    row1: "01 · แหล่งข้อมูล", row2: "02 · วิเคราะห์แล้ว",
+    row3: "03 · รูปแบบ", row4: "04 · โอนไฟล์",
+    metaHint: "วาง ⏎", check: "ตรวจสอบ",
+    qualityLabel: "ความละเอียด", bitrateLabel: "บิตเรต",
+    segVideo: "วิดีโอ · MP4", segAudio: "เสียง · MP3",
+    dl: "↓ ดาวน์โหลด", progText: "กำลังดาวน์โหลด…",
+    save: "◈ บันทึกไฟล์",
+    foot: "ใช้ภายใน · กรุณาเคารพสิทธิ์ของผู้สร้างสรรค์เนื้อหา",
+    langBtn: "EN",
+  },
+};
+let lang = "en";
+let lastInfo = null, lastChip = null, lastUrlErr = null, lastMsg = null;
+let stageHalt = false, qualBest = false, progState = null;
+function T(en, th) { return lang === "th" ? th : en; }
 
 function setIndex(n) {
   indexRows.forEach((p) => p.classList.toggle("now", p.dataset.row === String(n)));
@@ -68,17 +102,18 @@ function show(el, on) { el.classList.toggle("hidden", !on); }
 const YOUTUBE_RE = /^(https?:\/\/)?(www\.|m\.)?(youtube\.com\/(watch\?|watch\/|shorts\/|live\/|clip\/)|youtu\.be\/)/i;
 function isYoutube(url) { return YOUTUBE_RE.test(url); }
 
-function setUrlError(msg) {
-  els.urlErr.textContent = msg || "";
-  show(els.urlErr, !!msg);
+function setUrlError(pair) { // [en, th] or null
+  lastUrlErr = pair;
+  els.urlErr.textContent = pair ? T(pair[0], pair[1]) : "";
+  show(els.urlErr, !!pair);
 }
 
 async function checkInfo() {
   const url = els.url.value.trim();
   if (!url) { shake(els.checkBtn); return; }
-  if (!isYoutube(url)) { setUrlError("Not a YouTube link"); shake(els.checkBtn); return; }
+  if (!isYoutube(url)) { setUrlError(["Not a YouTube link", "ไม่ใช่ลิงก์ YouTube"]); shake(els.checkBtn); return; }
 
-  setUrlError("");
+  setUrlError(null);
   els.checkBtn.disabled = true;
   els.checkBtn.innerHTML = ORB_HTML; // thinking orb while parsing
   hideProgress();
@@ -100,10 +135,10 @@ async function checkInfo() {
     setIndex(2);
   } catch (e) {
     show(els.infoCard, false);
-    setUrlError(e.message);
+    setUrlError([e.message, e.message]);
   } finally {
     els.checkBtn.disabled = false;
-    els.checkBtn.textContent = CHECK_LABEL;
+    els.checkBtn.textContent = T("Check", "ตรวจสอบ");
   }
 }
 
@@ -114,12 +149,13 @@ function renderInfo(data) {
   els.errMsg.textContent = "";
   show(els.errMsg, false);
 
+  lastInfo = data;
   if (data.is_playlist) {
     show(els.thumb, false);
     els.vTitle.textContent = data.title || "Playlist";
-    els.vUp.textContent = `${data.count} videos in playlist`;
+    els.vUp.textContent = T(`${data.count} videos in playlist`, `${data.count} วิดีโอในเพลย์ลิสต์`);
     els.vDur.textContent = "";
-    els.metaCount.textContent = `${data.count} results`;
+    els.metaCount.textContent = T(`${data.count} results`, `${data.count} ผลลัพธ์`);
     els.playlistList.innerHTML = "";
     (data.entries || []).forEach((e) => {
       const li = document.createElement("li");
@@ -143,11 +179,12 @@ function renderInfo(data) {
     els.vTitle.textContent = data.title || "";
     els.vUp.textContent = data.uploader || "";
     els.vDur.textContent = fmtDuration(data.duration);
-    els.metaCount.textContent = "1 result";
+    els.metaCount.textContent = T("1 result", "1 ผลลัพธ์");
 
     // fill quality options
     els.quality.innerHTML = "";
     const quals = data.qualities || [];
+    qualBest = quals.length === 0;
     if (quals.length) {
       quals.forEach((q) => {
         const o = document.createElement("option");
@@ -158,7 +195,7 @@ function renderInfo(data) {
     } else {
       const o = document.createElement("option");
       o.value = "";
-      o.textContent = "Best quality";
+      o.textContent = T("Best quality", "คุณภาพดีที่สุด");
       els.quality.appendChild(o);
     }
     show(els.qualityField, currentType === "video");
@@ -179,6 +216,7 @@ function setType(type) {
 }
 
 function hideProgress() {
+  lastChip = null; stageHalt = false; progState = null;
   show(els.progCard, false);
   show(els.progDone, false);
   show(els.progChip, false);
@@ -189,8 +227,9 @@ function hideProgress() {
   if (pollTimer) { clearInterval(pollTimer); pollTimer = null; }
 }
 
-function setChip(text) {
-  els.chipText.textContent = text;
+function setChip(pair) {
+  lastChip = pair;
+  els.chipText.textContent = T(pair[0], pair[1]);
   show(els.progChip, true);
 }
 
@@ -207,11 +246,12 @@ async function startDownload() {
   show(els.progDone, false);
   els.errMsg.textContent = "";
   show(els.errMsg, false);
-  els.progText.textContent = "Starting…";
+  progState = "starting";
+  els.progText.textContent = T("Starting…", "เริ่ม…");
   els.barFill.style.width = "0%";
   els.progPct.textContent = "0%";
   els.barWrap.setAttribute("aria-valuenow", "0");
-  setChip("yt-dlp · starting");
+  setChip(["yt-dlp · starting", "yt-dlp · เริ่ม"]);
   setIndex(4);
 
   try {
@@ -244,35 +284,70 @@ function pollProgress(jobId) {
       els.barFill.style.width = `${pct}%`;
       els.barWrap.setAttribute("aria-valuenow", String(pct));
       els.metaStage.textContent = `${pct}%`;
-      setChip(`yt-dlp · ${p.status_text || "working"}`);
+      progState = null; // server text — language-neutral
+      const status = p.status_text || "working";
+      setChip([`yt-dlp · ${status}`, `yt-dlp · ${status}`]);
 
       if (p.status === "done") {
         clearInterval(pollTimer); pollTimer = null;
-        els.progText.textContent = "Finished";
+        progState = "finished";
+        els.progText.textContent = T("Finished", "เสร็จแล้ว");
         els.barFill.style.width = "100%";
         els.progPct.textContent = "100%";
         els.barWrap.setAttribute("aria-valuenow", "100");
         els.metaStage.textContent = "100%";
-        setChip("complete · saved to downloads/");
+        setChip(["complete · saved to downloads/", "เสร็จแล้ว · เก็บใน downloads/"]);
         els.saveBtn.href = p.download_url;
         show(els.progDone, true);
       } else if (p.status === "error") {
         clearInterval(pollTimer); pollTimer = null;
-        showError(p.error || "Something went wrong");
+        showError([p.error || "Something went wrong", p.error || "มีบางอย่างผิดพลาด"]);
       }
     } catch (e) {
       clearInterval(pollTimer); pollTimer = null;
-      showError(e.message);
+      showError([e.message, e.message]);
     }
   }, 1000);
 }
 
-function showError(msg) {
-  els.progText.textContent = "Error";
-  els.metaStage.textContent = "halt";
-  setChip("yt-dlp · halted");
-  els.errMsg.textContent = msg;
+function showError(pair) {
+  progState = "error"; stageHalt = true; lastMsg = pair;
+  els.progText.textContent = T("Error", "เกิดข้อผิดพลาด");
+  els.metaStage.textContent = T("halt", "หยุด");
+  setChip(["yt-dlp · halted", "yt-dlp · หยุด"]);
+  els.errMsg.textContent = T(pair[0], pair[1]);
   show(els.errMsg, true);
+}
+
+// ---------- language ----------
+function refreshDynamic() {
+  if (lastInfo) {
+    const d = lastInfo;
+    if (d.is_playlist) {
+      els.vUp.textContent = T(`${d.count} videos in playlist`, `${d.count} วิดีโอในเพลย์ลิสต์`);
+      els.metaCount.textContent = T(`${d.count} results`, `${d.count} ผลลัพธ์`);
+    } else {
+      els.metaCount.textContent = T("1 result", "1 ผลลัพธ์");
+    }
+    if (qualBest && els.quality.options.length) {
+      els.quality.options[0].textContent = T("Best quality", "คุณภาพดีที่สุด");
+    }
+  }
+  if (progState === "starting") els.progText.textContent = T("Starting…", "เริ่ม…");
+  if (progState === "finished") els.progText.textContent = T("Finished", "เสร็จแล้ว");
+  if (progState === "error") els.progText.textContent = T("Error", "เกิดข้อผิดพลาด");
+  if (stageHalt) els.metaStage.textContent = T("halt", "หยุด");
+  if (lastUrlErr) els.urlErr.textContent = T(lastUrlErr[0], lastUrlErr[1]);
+  if (lastMsg) els.errMsg.textContent = T(lastMsg[0], lastMsg[1]);
+  if (lastChip) setChip(lastChip);
+}
+
+function applyLang() {
+  document.documentElement.lang = lang;
+  document.querySelectorAll("[data-i18n]").forEach((el) => {
+    el.textContent = I18N[lang][el.dataset.i18n];
+  });
+  refreshDynamic();
 }
 
 // ---------- bind ----------
@@ -283,3 +358,7 @@ els.typeSeg.addEventListener("click", (e) => {
   if (btn) setType(btn.dataset.type);
 });
 els.dlBtn.addEventListener("click", startDownload);
+els.langBtn.addEventListener("click", () => {
+  lang = lang === "en" ? "th" : "en";
+  applyLang();
+});

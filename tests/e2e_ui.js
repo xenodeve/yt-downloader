@@ -55,9 +55,25 @@ const { chromium } = require("playwright");
   const pct = await pg.textContent("#progPct");
   const chip = await pg.textContent("#progChip");
 
+  // 3. language toggle: TH swaps copy, html lang, and the dynamic strings;
+  //    a second click returns to EN
+  await pg.click("#langBtn");
+  const thLang = await pg.evaluate(() => document.documentElement.lang);
+  const thBtn = (await pg.textContent("#checkBtn")).trim();
+  const thRow = (await pg.textContent(".index p.now")).trim();
+  const thSave = (await pg.textContent("#saveBtn")).trim();
+  const thChip = (await pg.textContent("#progChip")).trim();
+  await pg.click("#langBtn");
+  const enBack = (await pg.textContent("#checkBtn")).trim();
+
+  const langOk = thLang === "th" && thBtn.includes("ตรวจสอบ") &&
+    thRow.includes("โอนไฟล์") && thSave.includes("บันทึก") &&
+    thChip.includes("เสร็จแล้ว") && enBack === "Check";
+
   console.log("E2E:", {
     clientGateOk, title, indexNow,
     href, pct, chip: chip.trim(),
+    langOk, thLang, thBtn, thRow, thSave, thChip, enBack,
     pageErrors: errs.length,
   });
   await b.close();
