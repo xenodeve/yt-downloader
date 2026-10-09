@@ -65,7 +65,7 @@ function fmtDuration(s) {
 
 function show(el, on) { el.classList.toggle("hidden", !on); }
 
-const YOUTUBE_RE = /^(https?:\/\/)?(www\.|m\.)?(youtube\.com\/(watch|shorts|live|clip)\/|youtu\.be\/)/i;
+const YOUTUBE_RE = /^(https?:\/\/)?(www\.|m\.)?(youtube\.com\/(watch\?|watch\/|shorts\/|live\/|clip\/)|youtu\.be\/)/i;
 function isYoutube(url) { return YOUTUBE_RE.test(url); }
 
 function setUrlError(msg) {

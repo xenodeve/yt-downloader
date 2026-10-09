@@ -25,7 +25,7 @@ app = Flask(__name__)
 # server-side gate: only YouTube links are accepted (the client checks too,
 # but the server is authoritative)
 YOUTUBE_RE = re.compile(
-    r"^https?://(?:www\.|m\.)?(?:youtube\.com/(?:watch|shorts|live|clip)/|youtu\.be/)",
+    r"^https?://(?:www\.|m\.)?(?:youtube\.com/(?:watch\?|watch/|shorts/|live/|clip/)|youtu\.be/)",
     re.IGNORECASE,
 )
 
