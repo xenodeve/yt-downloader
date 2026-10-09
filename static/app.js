@@ -65,6 +65,9 @@ function fmtDuration(s) {
 
 function show(el, on) { el.classList.toggle("hidden", !on); }
 
+const YOUTUBE_RE = /^(https?:\/\/)?(www\.|m\.)?(youtube\.com\/(watch|shorts|live|clip)\/|youtu\.be\/)/i;
+function isYoutube(url) { return YOUTUBE_RE.test(url); }
+
 function setUrlError(msg) {
   els.urlErr.textContent = msg || "";
   show(els.urlErr, !!msg);
@@ -73,6 +76,7 @@ function setUrlError(msg) {
 async function checkInfo() {
   const url = els.url.value.trim();
   if (!url) { shake(els.checkBtn); return; }
+  if (!isYoutube(url)) { setUrlError("Not a YouTube link"); shake(els.checkBtn); return; }
 
   setUrlError("");
   els.checkBtn.disabled = true;

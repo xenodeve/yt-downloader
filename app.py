@@ -6,6 +6,7 @@ Run:  python app.py   →  open http://localhost:5000
 """
 
 import os
+import re
 import shutil
 import threading
 import uuid
@@ -20,6 +21,17 @@ DOWNLOAD_DIR = BASE_DIR / "downloads"
 DOWNLOAD_DIR.mkdir(exist_ok=True)
 
 app = Flask(__name__)
+
+# server-side gate: only YouTube links are accepted (the client checks too,
+# but the server is authoritative)
+YOUTUBE_RE = re.compile(
+    r"^https?://(?:www\.|m\.)?(?:youtube\.com/(?:watch|shorts|live|clip)/|youtu\.be/)",
+    re.IGNORECASE,
+)
+
+
+def is_youtube_url(url):
+    return bool(YOUTUBE_RE.match(url))
 
 # job_id -> {status, percent, status_text, file_path, error}
 JOBS = {}
@@ -103,6 +115,8 @@ def api_info():
     url = (request.args.get("url") or "").strip()
     if not url:
         return jsonify({"error": "URL is empty"}), 400
+    if not is_youtube_url(url):
+        return jsonify({"error": "Not a YouTube link"}), 400
 
     opts = base_ydl_opts()
     opts.update({
@@ -159,6 +173,8 @@ def api_download():
 
     if not url:
         return jsonify({"error": "URL is empty"}), 400
+    if not is_youtube_url(url):
+        return jsonify({"error": "Not a YouTube link"}), 400
 
     job_id = uuid.uuid4().hex
     with JOBS_LOCK:
