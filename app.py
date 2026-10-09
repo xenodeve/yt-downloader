@@ -104,11 +104,18 @@ def pick_final_file(files):
     return max(pool, key=lambda f: f.stat().st_size)
 
 
+# yt-dlp intermediates look like "job.a.f140.mp4"; the real output is "job.a.mp4"
+INTERMEDIATE_RE = re.compile(r"\.f\d+\.[^.]+$")
+
+
 def finalize(job_id, info):
     """Pick (or build) the result file for a finished job."""
     files = [f for f in DOWNLOAD_DIR.glob(f"{job_id}*") if f.is_file()]
     if info.get("_type") == "playlist":
-        media = [f for f in files if f.suffix.lower() != ".zip"]
+        media = [f for f in files
+                 if f.suffix.lower() != ".zip"
+                 and not INTERMEDIATE_RE.search(f.name)
+                 and f.suffix.lower() not in (".part", ".tmp")]
         if not media:
             raise RuntimeError("No downloaded file found")
         zip_path = DOWNLOAD_DIR / f"{job_id}.zip"
