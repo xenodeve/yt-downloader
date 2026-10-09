@@ -333,5 +333,12 @@ def download_file(job_id):
     return send_file(path, as_attachment=True, download_name=path.name)
 
 
+def main():
+    # use_reloader=False: the debug reloader watches the whole repo, so every
+    # download (a new file in downloads/) restarts the server and kills running
+    # jobs. Keep the debugger; stop the file-watching restarts.
+    app.run(debug=True, host="127.0.0.1", port=5000, use_reloader=False)
+
+
 if __name__ == "__main__":
-    app.run(debug=True, host="127.0.0.1", port=5000)
+    main()
