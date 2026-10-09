@@ -83,6 +83,16 @@ def base_ydl_opts():
     ff = get_ffmpeg_location()
     if ff:
         opts["ffmpeg_location"] = ff
+    # YouTube blocks anonymous requests from some IPs ("Sign in to confirm
+    # you're not a bot"). Pass cookies: a cookies.txt exported from the
+    # browser, placed next to app.py; or YTDLP_BROWSER=chrome/firefox/...
+    # to read cookies straight from the browser's cookie store.
+    cookie_file = BASE_DIR / "cookies.txt"
+    if cookie_file.exists():
+        opts["cookiefile"] = str(cookie_file)
+    browser = os.environ.get("YTDLP_BROWSER")
+    if browser:
+        opts["cookiesfrombrowser"] = (browser,)
     return opts
 
 
