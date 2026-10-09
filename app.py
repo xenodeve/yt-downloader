@@ -40,9 +40,13 @@ JOBS_MAX = 20
 
 
 def prune_jobs():
-    """dict order is insertion order — drop the oldest beyond JOBS_MAX."""
+    """dict order is insertion order — drop the oldest finished jobs beyond
+    JOBS_MAX. Running jobs are never dropped: their worker thread and the
+    progress hook write into JOBS[job_id], and a KeyError there kills the
+    download mid-flight."""
     with JOBS_LOCK:
-        for job_id in list(JOBS)[:max(0, len(JOBS) - JOBS_MAX)]:
+        victims = [jid for jid in JOBS if JOBS[jid]["status"] != "running"]
+        for job_id in victims[:max(0, len(JOBS) - JOBS_MAX)]:
             del JOBS[job_id]
 
 

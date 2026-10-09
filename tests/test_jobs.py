@@ -12,3 +12,16 @@ def test_prune_keeps_newest():
     assert len(JOBS) <= JOBS_MAX
     assert "j24" in JOBS   # newest kept
     assert "j0" not in JOBS  # oldest dropped
+
+
+def test_prune_keeps_running_jobs():
+    # a running job's worker thread writes into JOBS[job_id] (progress hook);
+    # pruning it makes that write a KeyError mid-download
+    JOBS.clear()
+    for i in range(JOBS_MAX + 5):
+        st = "running" if i == 0 else "done"
+        JOBS[f"j{i}"] = {"status": st, "percent": 0, "status_text": "",
+                         "file_path": None, "error": None}
+    prune_jobs()
+    assert "j0" in JOBS    # running job is not dropped
+    assert "j1" not in JOBS  # oldest finished job is dropped
