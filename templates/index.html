@@ -4,9 +4,9 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>YT Downloader</title>
-  <meta name="description" content="Download YouTube videos (MP4) and audio (MP3) to your own machine. Local, self-hosted, no account." />
+  <meta name="description" content="Download videos (MP4) and audio (MP3) from YouTube, Facebook, TikTok, and Instagram to your own machine. Local, self-hosted, no account." />
   <meta property="og:title" content="YT Downloader" />
-  <meta property="og:description" content="Download YouTube videos (MP4) and audio (MP3) to your own machine. Local, self-hosted, no account." />
+  <meta property="og:description" content="Download videos (MP4) and audio (MP3) from YouTube, Facebook, TikTok, and Instagram to your own machine. Local, self-hosted, no account." />
   <meta property="og:image" content="{{ url_for('static', filename='og.png') }}" />
   <link rel="icon" type="image/svg+xml" href="{{ url_for('static', filename='favicon.svg') }}" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -37,8 +37,8 @@
           <p class="row-head"><span data-i18n="row1">01 &middot; Source URL</span><span class="num" id="metaHint" data-i18n="metaHint">paste &crarr;</span></p>
           <div class="url-row">
             <input id="url" type="text" class="field-input"
-                   placeholder="https://www.youtube.com/watch?v=&hellip;"
-                   aria-label="YouTube link" autocomplete="off" spellcheck="false" />
+                   placeholder="YouTube · Facebook · TikTok · Instagram"
+                   aria-label="Video link" autocomplete="off" spellcheck="false" />
             <button id="checkBtn" class="btn ghost" data-i18n="check">Check</button>
           </div>
           <p id="urlErr" class="err hidden" role="alert"></p>

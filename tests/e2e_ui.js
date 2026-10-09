@@ -40,7 +40,7 @@ const { chromium } = require("playwright");
   await pg.click("#checkBtn");
   await pg.waitForTimeout(300);
   const errText = await pg.textContent("#urlErr");
-  const clientGateOk = errText.includes("Not a YouTube") && !fetched;
+  const clientGateOk = errText.includes("Not a supported") && !fetched;
 
   // 2. valid URL: full flow
   await pg.fill("#url", "https://www.youtube.com/watch?v=dQw4w9WgXcQ");
@@ -70,10 +70,17 @@ const { chromium } = require("playwright");
     thRow.includes("โอนไฟล์") && thSave.includes("บันทึก") &&
     thChip.includes("เสร็จแล้ว") && enBack === "Check";
 
+  // 4. Facebook URL: the client gate lets it through to the (mocked) info call
+  await pg.fill("#url", "https://www.facebook.com/watch?v=10101010101");
+  await pg.click("#checkBtn");
+  await pg.waitForSelector("#infoBody:not(.hidden)", { timeout: 5000 });
+  const fbOk = (await pg.textContent(".index p.now")).trim().startsWith("02");
+
   console.log("E2E:", {
     clientGateOk, title, indexNow,
     href, pct, chip: chip.trim(),
     langOk, thLang, thBtn, thRow, thSave, thChip, enBack,
+    fbOk,
     pageErrors: errs.length,
   });
   await b.close();

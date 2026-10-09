@@ -99,8 +99,8 @@ function fmtDuration(s) {
 
 function show(el, on) { el.classList.toggle("hidden", !on); }
 
-const YOUTUBE_RE = /^(https?:\/\/)?(www\.|m\.)?(youtube\.com\/(watch\?|watch\/|shorts\/|live\/|clip\/)|youtu\.be\/)/i;
-function isYoutube(url) { return YOUTUBE_RE.test(url); }
+const SUPPORTED_RE = /^(https?:\/\/)?(www\.|m\.)?(youtube\.com\/(watch\?|watch\/|shorts\/|live\/|clip\/)|youtu\.be\/|facebook\.com\/(watch|reel|reels|profile_video)|fb\.watch\/|fb\.com\/|instagram\.com\/(p|reel|tv)\/|instagr\.am\/|tiktok\.com\/|vm\.tiktok\.com\/|m\.tiktok\.com\/)/i;
+function isSupported(url) { return SUPPORTED_RE.test(url); }
 
 function setUrlError(pair) { // [en, th] or null
   lastUrlErr = pair;
@@ -111,7 +111,7 @@ function setUrlError(pair) { // [en, th] or null
 async function checkInfo() {
   const url = els.url.value.trim();
   if (!url) { shake(els.checkBtn); return; }
-  if (!isYoutube(url)) { setUrlError(["Not a YouTube link", "ไม่ใช่ลิงก์ YouTube"]); shake(els.checkBtn); return; }
+  if (!isSupported(url)) { setUrlError(["Not a supported link — YouTube, Facebook, TikTok, Instagram", "ไม่ใช่ลิงก์ที่รองรับ — YouTube, Facebook, TikTok, Instagram"]); shake(els.checkBtn); return; }
 
   setUrlError(null);
   els.checkBtn.disabled = true;

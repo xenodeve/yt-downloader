@@ -22,16 +22,23 @@ DOWNLOAD_DIR.mkdir(exist_ok=True)
 
 app = Flask(__name__)
 
-# server-side gate: only YouTube links are accepted (the client checks too,
-# but the server is authoritative)
-YOUTUBE_RE = re.compile(
-    r"^https?://(?:www\.|m\.)?(?:youtube\.com/(?:watch\?|watch/|shorts/|live/|clip/)|youtu\.be/)",
+# server-side gate: accepted platforms (the client checks too,
+# but the server is authoritative) — all four have yt-dlp extractors
+SUPPORTED_RE = re.compile(
+    r"^https?://(?:www\.|m\.)?(?:"
+    r"youtube\.com/(?:watch\?|watch/|shorts/|live/|clip/)|youtu\.be/"
+    r"|facebook\.com/(?:watch|reel|reels|profile_video)|fb\.watch/|fb\.com/"
+    r"|instagram\.com/(?:p|reel|tv)/|instagr\.am/"
+    r"|tiktok\.com/|vm\.tiktok\.com/|m\.tiktok\.com/"
+    r")",
     re.IGNORECASE,
 )
 
 
-def is_youtube_url(url):
-    return bool(YOUTUBE_RE.match(url))
+def is_supported_url(url):
+    return bool(SUPPORTED_RE.match(url))
+
+SUPPORT_MSG = "Not a supported link — YouTube, Facebook, TikTok, Instagram"
 
 # job_id -> {status, percent, status_text, file_path, error}
 JOBS = {}
@@ -164,8 +171,8 @@ def api_info():
     url = (request.args.get("url") or "").strip()
     if not url:
         return jsonify({"error": "URL is empty"}), 400
-    if not is_youtube_url(url):
-        return jsonify({"error": "Not a YouTube link"}), 400
+    if not is_supported_url(url):
+        return jsonify({"error": SUPPORT_MSG}), 400
 
     opts = base_ydl_opts()
     opts.update({
@@ -222,8 +229,8 @@ def api_download():
 
     if not url:
         return jsonify({"error": "URL is empty"}), 400
-    if not is_youtube_url(url):
-        return jsonify({"error": "Not a YouTube link"}), 400
+    if not is_supported_url(url):
+        return jsonify({"error": SUPPORT_MSG}), 400
 
     job_id = uuid.uuid4().hex
     prune_jobs()  # called outside the lock — prune_jobs acquires it itself
