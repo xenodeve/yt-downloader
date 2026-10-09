@@ -153,9 +153,8 @@ function renderInfo(data) {
   if (data.is_playlist) {
     show(els.thumb, false);
     els.vTitle.textContent = data.title || "Playlist";
-    els.vUp.textContent = T(`${data.count} videos in playlist`, `${data.count} วิดีโอในเพลย์ลิสต์`);
     els.vDur.textContent = "";
-    els.metaCount.textContent = T(`${data.count} results`, `${data.count} ผลลัพธ์`);
+    infoCopy(data);
     els.playlistList.innerHTML = "";
     (data.entries || []).forEach((e) => {
       const li = document.createElement("li");
@@ -179,7 +178,7 @@ function renderInfo(data) {
     els.vTitle.textContent = data.title || "";
     els.vUp.textContent = data.uploader || "";
     els.vDur.textContent = fmtDuration(data.duration);
-    els.metaCount.textContent = T("1 result", "1 ผลลัพธ์");
+    infoCopy(data);
 
     // fill quality options
     els.quality.innerHTML = "";
@@ -320,19 +319,21 @@ function showError(pair) {
 }
 
 // ---------- language ----------
-function refreshDynamic() {
-  if (lastInfo) {
-    const d = lastInfo;
-    if (d.is_playlist) {
-      els.vUp.textContent = T(`${d.count} videos in playlist`, `${d.count} วิดีโอในเพลย์ลิสต์`);
-      els.metaCount.textContent = T(`${d.count} results`, `${d.count} ผลลัพธ์`);
-    } else {
-      els.metaCount.textContent = T("1 result", "1 ผลลัพธ์");
-    }
-    if (qualBest && els.quality.options.length) {
-      els.quality.options[0].textContent = T("Best quality", "คุณภาพดีที่สุด");
-    }
+// shared copy for the info card — renderInfo and applyLang both use it
+function infoCopy(d) {
+  if (d.is_playlist) {
+    els.vUp.textContent = T(`${d.count} videos in playlist`, `${d.count} วิดีโอในเพลย์ลิสต์`);
+    els.metaCount.textContent = T(`${d.count} results`, `${d.count} ผลลัพธ์`);
+  } else {
+    els.metaCount.textContent = T("1 result", "1 ผลลัพธ์");
   }
+  if (qualBest && els.quality.options.length) {
+    els.quality.options[0].textContent = T("Best quality", "คุณภาพดีที่สุด");
+  }
+}
+
+function refreshDynamic() {
+  if (lastInfo) infoCopy(lastInfo);
   if (progState === "starting") els.progText.textContent = T("Starting…", "เริ่ม…");
   if (progState === "finished") els.progText.textContent = T("Finished", "เสร็จแล้ว");
   if (progState === "error") els.progText.textContent = T("Error", "เกิดข้อผิดพลาด");
