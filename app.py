@@ -74,6 +74,11 @@ def base_ydl_opts():
     return opts
 
 
+def outtmpl_for(job_id):
+    # %(title.80)s keeps the path under Windows MAX_PATH even for long titles
+    return str(DOWNLOAD_DIR / f"{job_id}%(title.80)s [%(id)s].%(ext)s")
+
+
 def make_progress_hook(job_id):
     def hook(d):
         if d.get("status") == "downloading":
@@ -189,7 +194,7 @@ def api_download():
     def worker():
         try:
             opts = base_ydl_opts()
-            opts["outtmpl"] = str(DOWNLOAD_DIR / f"{job_id}%(title)s [%(id)s].%(ext)s")
+            opts["outtmpl"] = outtmpl_for(job_id)
             opts["progress_hooks"] = [make_progress_hook(job_id)]
 
             if kind == "mp3":
