@@ -36,6 +36,14 @@ def is_youtube_url(url):
 # job_id -> {status, percent, status_text, file_path, error}
 JOBS = {}
 JOBS_LOCK = threading.Lock()
+JOBS_MAX = 20
+
+
+def prune_jobs():
+    """dict order is insertion order — drop the oldest beyond JOBS_MAX."""
+    with JOBS_LOCK:
+        for job_id in list(JOBS)[:max(0, len(JOBS) - JOBS_MAX)]:
+            del JOBS[job_id]
 
 
 # --------------------------------------------------------------------------- #
@@ -204,6 +212,7 @@ def api_download():
         return jsonify({"error": "Not a YouTube link"}), 400
 
     job_id = uuid.uuid4().hex
+    prune_jobs()  # called outside the lock — prune_jobs acquires it itself
     with JOBS_LOCK:
         JOBS[job_id] = {
             "status": "running",
