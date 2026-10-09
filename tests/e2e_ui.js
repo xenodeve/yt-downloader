@@ -30,8 +30,8 @@ const { chromium } = require("playwright");
     r.fulfill({ json: seq[Math.min(step - 1, seq.length - 1)] });
   });
 
-  const file = "file:///" + process.argv[2].replace(/\\/g, "/");
-  await pg.goto(file);
+  // page must be served over http — fetch() refuses the file:// scheme
+  await pg.goto(process.argv[2]);
 
   // 1. invalid URL: client gate shows the error, no fetch to /api/info
   let fetched = false;
