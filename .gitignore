@@ -19,3 +19,4 @@ Thumbs.db
 
 # Playwright MCP session files
 .playwright-mcp/
+design-exploration/

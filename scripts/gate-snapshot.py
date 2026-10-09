@@ -13,5 +13,6 @@ html = html.replace('<link rel="stylesheet" href="/static/style.css" />',
 html = html.replace('<script src="/static/app.js"></script>',
                     "<script>\n" + js + "\n</script>")
 out = BASE / "design-exploration" / "gate-snapshot.html"
+out.parent.mkdir(exist_ok=True)  # exploration dir was deleted after production sign-off
 out.write_text(html, encoding="utf-8")
 print("snapshot:", out)
