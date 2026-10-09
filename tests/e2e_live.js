@@ -42,7 +42,8 @@ const { chromium } = require("playwright");
   const gotInfo = await pg.waitForSelector("#infoBody:not(.hidden)", { timeout: 40000 })
     .then(() => true).catch(() => false);
   const title = gotInfo ? (await pg.textContent("#vTitle")).trim() : "";
-  const uiErr = (await pg.textContent("#urlErr")).trim().slice(0, 80);
+  const uiErr = (await pg.textContent("#urlErr")).trim();
+  const hint = uiErr.includes("cookies.txt");
   let flow = null;
   if (gotInfo) {
     await pg.click(`[data-type="${type}"]`);
@@ -67,7 +68,7 @@ const { chromium } = require("playwright");
   await pg.click("#langBtn");
 
   console.log("E2E-LIVE:", {
-    target, type, gate, gotInfo, title, uiErr, flow,
+    target, type, gate, gotInfo, title, uiErr, hint, flow,
     thLang, thSave, pageErrors: errs.length,
   });
   await b.close();
