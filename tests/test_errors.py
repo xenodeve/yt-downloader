@@ -12,7 +12,21 @@ def test_bot_block_gets_cookies_hint():
 
 
 def test_plain_error_unchanged():
-    assert friendly_error("Cannot parse data") == "Cannot parse data"
+    assert friendly_error("HTTP error 404") == "HTTP error 404"
+
+
+def test_facebook_parse_failure_gets_hint():
+    raw = "[facebook] 3676516585958356: Cannot parse data"
+    out = friendly_error(raw)
+    assert raw in out
+    assert "cookies.txt" in out
+
+
+def test_tiktok_wall_gets_hint():
+    raw = "[TikTok] 6748451240264420610: Unexpected response from webpage request"
+    out = friendly_error(raw)
+    assert raw in out
+    assert "cookies.txt" in out
 
 
 def test_api_info_bot_block_shows_hint(monkeypatch):

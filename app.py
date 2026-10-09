@@ -41,13 +41,18 @@ def is_supported_url(url):
 SUPPORT_MSG = "Not a supported link — YouTube, Facebook, TikTok, Instagram"
 
 # a raw yt-dlp failure like "Sign in to confirm you're not a bot" is true
-# but not useful — append the one action that fixes it (cookies.txt)
-LOGIN_HINT_RE = re.compile(r"sign in to confirm|login required", re.IGNORECASE)
+# but not useful — append the one action that fixes it (cookies.txt).
+# Facebook's "Cannot parse data" and TikTok's page-wall are the same class:
+# the site hides the data from anonymous requests, a logged-in session fixes it.
+COOKIES_TRIGGER_RE = re.compile(
+    r"sign in to confirm|login required|cannot parse data|unexpected response from webpage request",
+    re.IGNORECASE,
+)
 COOKIES_HINT = " — export cookies.txt from your logged-in browser and place it next to app.py"
 
 
 def friendly_error(msg):
-    if LOGIN_HINT_RE.search(msg):
+    if COOKIES_TRIGGER_RE.search(msg):
         return msg + COOKIES_HINT
     return msg
 
